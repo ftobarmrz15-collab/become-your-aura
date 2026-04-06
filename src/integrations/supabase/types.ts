@@ -14,7 +14,252 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activities: {
+        Row: {
+          activity_type_id: string
+          attribute_deltas: Json
+          completed_at: string
+          duration_minutes: number
+          id: string
+          note: string | null
+          user_id: string
+          xp_earned: number
+        }
+        Insert: {
+          activity_type_id: string
+          attribute_deltas?: Json
+          completed_at?: string
+          duration_minutes?: number
+          id?: string
+          note?: string | null
+          user_id: string
+          xp_earned?: number
+        }
+        Update: {
+          activity_type_id?: string
+          attribute_deltas?: Json
+          completed_at?: string
+          duration_minutes?: number
+          id?: string
+          note?: string | null
+          user_id?: string
+          xp_earned?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_activity_type_id_fkey"
+            columns: ["activity_type_id"]
+            isOneToOne: false
+            referencedRelation: "activity_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activity_types: {
+        Row: {
+          attribute_boosts: Json
+          category: string
+          emoji: string
+          id: string
+          is_custom: boolean
+          name: string
+          user_id: string | null
+        }
+        Insert: {
+          attribute_boosts?: Json
+          category: string
+          emoji: string
+          id?: string
+          is_custom?: boolean
+          name: string
+          user_id?: string | null
+        }
+        Update: {
+          attribute_boosts?: Json
+          category?: string
+          emoji?: string
+          id?: string
+          is_custom?: boolean
+          name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      avatar_state: {
+        Row: {
+          charisma: number
+          courage: number
+          creativity: number
+          discipline: number
+          dominant_attribute: string | null
+          flow: number
+          focus: number
+          freedom: number
+          id: string
+          level: number
+          strength: number
+          total_xp: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          charisma?: number
+          courage?: number
+          creativity?: number
+          discipline?: number
+          dominant_attribute?: string | null
+          flow?: number
+          focus?: number
+          freedom?: number
+          id?: string
+          level?: number
+          strength?: number
+          total_xp?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          charisma?: number
+          courage?: number
+          creativity?: number
+          discipline?: number
+          dominant_attribute?: string | null
+          flow?: number
+          focus?: number
+          freedom?: number
+          id?: string
+          level?: number
+          strength?: number
+          total_xp?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      streaks: {
+        Row: {
+          current_streak: number
+          id: string
+          last_activity_date: string | null
+          max_streak: number
+          shield_available: boolean | null
+          user_id: string
+        }
+        Insert: {
+          current_streak?: number
+          id?: string
+          last_activity_date?: string | null
+          max_streak?: number
+          shield_available?: boolean | null
+          user_id: string
+        }
+        Update: {
+          current_streak?: number
+          id?: string
+          last_activity_date?: string | null
+          max_streak?: number
+          shield_available?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      uploads: {
+        Row: {
+          activity_id: string
+          created_at: string
+          id: string
+          is_highlight: boolean | null
+          media_type: string
+          storage_path: string
+          thumbnail_path: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_id: string
+          created_at?: string
+          id?: string
+          is_highlight?: boolean | null
+          media_type: string
+          storage_path: string
+          thumbnail_path?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_id?: string
+          created_at?: string
+          id?: string
+          is_highlight?: boolean | null
+          media_type?: string
+          storage_path?: string
+          thumbnail_path?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "uploads_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_favorites: {
+        Row: {
+          activity_type_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          activity_type_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          activity_type_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_favorites_activity_type_id_fkey"
+            columns: ["activity_type_id"]
+            isOneToOne: false
+            referencedRelation: "activity_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          monthly_goal: number | null
+          onboarded: boolean | null
+          user_id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          monthly_goal?: number | null
+          onboarded?: boolean | null
+          user_id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          monthly_goal?: number | null
+          onboarded?: boolean | null
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
