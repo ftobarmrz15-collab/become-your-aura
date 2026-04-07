@@ -4,14 +4,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MobileLayout } from '@/components/MobileLayout';
 import { BottomNav } from '@/components/BottomNav';
-import { AvatarCircle } from '@/components/AvatarCircle';
+import { AvatarDisplay } from '@/components/AvatarDisplay';
+import { AvatarEditor } from '@/components/AvatarEditor';
 import { getLevelFromXP, getDominantAttribute, LEVEL_NAMES, ATTRIBUTES, type AttributeName } from '@/lib/constants';
 import { LogOut } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAvatarConfig } from '@/hooks/useAvatarConfig';
 
 export default function ProfilePage() {
   const { user, signOut } = useAuth();
   const queryClient = useQueryClient();
+  const [editorOpen, setEditorOpen] = useState(false);
+  const { config: avatarConfig } = useAvatarConfig();
 
   const { data: profile } = useQuery({
     queryKey: ['profile', user?.id],
@@ -86,7 +90,6 @@ export default function ProfilePage() {
   for (const a of ATTRIBUTES) attrs[a] = (avatar as any)[a] ?? 0;
   const dominant = getDominantAttribute(attrs);
 
-  // Most frequent activity this month
   const activityCounts: Record<string, { count: number; name: string; emoji: string }> = {};
   monthActivities?.forEach((a: any) => {
     const name = a.activity_types?.name ?? 'Unknown';
@@ -117,7 +120,14 @@ export default function ProfilePage() {
         <h1 className="text-xl font-bold text-foreground">Perfil</h1>
 
         <div className="flex flex-col items-center gap-3">
-          <AvatarCircle size={100} dominantAttribute={dominant} level={level} username={profile.username} />
+          <AvatarDisplay
+            size={100}
+            dominantAttribute={dominant}
+            level={level}
+            username={profile.username}
+            avatarUrl={avatarConfig?.avatar_url}
+            onClick={() => setEditorOpen(true)}
+          />
           <p className="text-lg font-semibold text-foreground">{profile.username}</p>
           <p className="text-sm text-muted-foreground">Nivel {level} — {LEVEL_NAMES[level]}</p>
         </div>
@@ -153,7 +163,6 @@ export default function ProfilePage() {
               </button>
             )}
           </div>
-          {/* Progress bar */}
           <div className="mt-3 h-2 bg-secondary rounded-full overflow-hidden">
             <div
               className="h-full bg-success rounded-full transition-all"
@@ -206,6 +215,7 @@ export default function ProfilePage() {
         </button>
       </div>
       <BottomNav />
+      <AvatarEditor open={editorOpen} onClose={() => setEditorOpen(false)} />
     </MobileLayout>
   );
 }
