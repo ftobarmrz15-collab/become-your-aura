@@ -90,8 +90,10 @@ export type Database = {
           avatar_url: string | null
           eye_color: string
           eye_shape: string
+          eyebrows: string
           face_shape: string
           facial_hair: string
+          gender: string
           hair_color: string
           hair_style: string
           id: string
@@ -106,8 +108,10 @@ export type Database = {
           avatar_url?: string | null
           eye_color?: string
           eye_shape?: string
+          eyebrows?: string
           face_shape?: string
           facial_hair?: string
+          gender?: string
           hair_color?: string
           hair_style?: string
           id?: string
@@ -122,8 +126,10 @@ export type Database = {
           avatar_url?: string | null
           eye_color?: string
           eye_shape?: string
+          eyebrows?: string
           face_shape?: string
           facial_hair?: string
+          gender?: string
           hair_color?: string
           hair_style?: string
           id?: string

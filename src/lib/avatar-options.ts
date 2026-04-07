@@ -20,6 +20,8 @@ export const HAIR_STYLES = [
   { id: 'mohawk', label: 'Mohawk', emoji: '🤘' },
   { id: 'ponytail', label: 'Cola', emoji: '🧑‍🎤' },
   { id: 'bun', label: 'Moño', emoji: '👩‍🎤' },
+  { id: 'bob', label: 'Bob', emoji: '💇‍♀️' },
+  { id: 'fade', label: 'Fade', emoji: '💈' },
 ];
 
 export const HAIR_COLORS = [
@@ -93,6 +95,19 @@ export const OUTFITS = [
   { id: 'formal', label: 'Formal', emoji: '👔' },
   { id: 'hoodie', label: 'Hoodie', emoji: '🧤' },
   { id: 'tank-top', label: 'Tank top', emoji: '🎽' },
+  { id: 'university', label: 'Universitario', emoji: '🎓' },
+];
+
+export const GENDERS = [
+  { id: 'masculine', label: 'Masculino' },
+  { id: 'feminine', label: 'Femenino' },
+  { id: 'neutral', label: 'Neutro' },
+];
+
+export const EYEBROWS = [
+  { id: 'thin', label: 'Finas' },
+  { id: 'normal', label: 'Normales' },
+  { id: 'thick', label: 'Gruesas' },
 ];
 
 export interface AvatarConfig {
@@ -106,6 +121,8 @@ export interface AvatarConfig {
   mouth: string;
   facial_hair: string;
   outfit: string;
+  gender: string;
+  eyebrows: string;
   avatar_url?: string | null;
 }
 
@@ -120,6 +137,8 @@ export const DEFAULT_AVATAR_CONFIG: AvatarConfig = {
   mouth: 'neutral',
   facial_hair: 'none',
   outfit: 'casual',
+  gender: 'neutral',
+  eyebrows: 'normal',
 };
 
 export function randomAvatarConfig(): AvatarConfig {
@@ -135,5 +154,7 @@ export function randomAvatarConfig(): AvatarConfig {
     mouth: pick(MOUTHS),
     facial_hair: pick(FACIAL_HAIR),
     outfit: pick(OUTFITS),
+    gender: pick(GENDERS),
+    eyebrows: pick(EYEBROWS),
   };
 }
