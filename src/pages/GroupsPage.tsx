@@ -32,18 +32,18 @@ export default function GroupsPage() {
   const [loading, setLoading] = useState(false);
 
   const invalidateGroupQueries = () => {
-    queryClient.invalidateQueries({ queryKey: ['my-groups', user?.id] });
     queryClient.invalidateQueries({ queryKey: ['my-groups'] });
   };
 
   const { data: myGroups, isLoading } = useQuery({
     queryKey: ['my-groups', user?.id],
     queryFn: async () => {
-      const { data: memberships } = await supabase
+      const { data: memberships, error: memErr } = await supabase
         .from('group_members')
         .select('group_id, role, groups(id, name, invite_code, is_public, created_by, created_at)')
         .eq('user_id', user!.id);
 
+      if (memErr) throw memErr;
       if (!memberships) return [];
 
       const groups = await Promise.all(
@@ -55,7 +55,7 @@ export default function GroupsPage() {
           return { ...m.groups, role: m.role, member_count: count ?? 0 };
         })
       );
-      return groups;
+      return groups.filter(Boolean);
     },
     enabled: !!user,
   });
@@ -70,23 +70,68 @@ export default function GroupsPage() {
     setLoading(true);
 
     try {
-      const { data: group, error } = await supabase.rpc('create_group_with_code', {
-        _name: groupName.trim(),
-        _is_public: isPublic,
-      });
+      // Try RPC first, fallback to direct insert
+      let groupId: string | null = null;
+      let inviteCode = generateInviteCode();
 
-      if (error || !group) {
-        throw error ?? new Error('No se pudo crear el grupo');
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('create_group_with_code', {
+          _name: groupName.trim(),
+          _is_public: isPublic,
+        });
+        if (!rpcError && rpcData) {
+          const group = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+          if (group?.id) {
+            groupId = group.id;
+            inviteCode = group.invite_code;
+          }
+        }
+      } catch (_) { /* fallthrough to direct insert */ }
+
+      if (!groupId) {
+        // Direct insert fallback
+        let attempts = 0;
+        while (attempts < 10 && !groupId) {
+          const { data: insertedGroup, error: insertError } = await supabase
+            .from('groups')
+            .insert({
+              name: groupName.trim(),
+              invite_code: inviteCode,
+              created_by: user.id,
+              is_public: isPublic,
+            })
+            .select('id, invite_code')
+            .single();
+
+          if (insertError) {
+            if (insertError.code === '23505') {
+              inviteCode = generateInviteCode();
+              attempts++;
+              continue;
+            }
+            throw insertError;
+          }
+          groupId = insertedGroup.id;
+          inviteCode = insertedGroup.invite_code;
+        }
+
+        if (!groupId) throw new Error('No se pudo crear el grupo');
+
+        const { error: memberError } = await supabase
+          .from('group_members')
+          .insert({ group_id: groupId, user_id: user.id, role: 'creator' });
+
+        if (memberError) throw memberError;
       }
 
       invalidateGroupQueries();
-      toast.success(`Grupo creado. Código: ${group.invite_code}`);
+      toast.success(`Grupo creado 🎉  Código: ${inviteCode}`);
       setGroupName('');
       setCreateOpen(false);
-      navigate(`/groups/${group.id}`);
+      navigate(`/groups/${groupId}`);
     } catch (error: any) {
-      const message = error?.message ?? 'Error creando grupo';
-      toast.error(message);
+      console.error('Error creando grupo:', error);
+      toast.error(error?.message ?? 'Error creando grupo');
     } finally {
       setLoading(false);
     }
@@ -102,22 +147,64 @@ export default function GroupsPage() {
     setLoading(true);
 
     try {
-      const { data: joinedGroupId, error } = await supabase.rpc('join_group_with_code', {
-        _invite_code: joinCode.trim().toUpperCase(),
-      });
+      const code = joinCode.trim().toUpperCase();
 
-      if (error || !joinedGroupId) {
-        throw error ?? new Error('No se pudo unir al grupo');
+      // Try RPC first
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('join_group_with_code', {
+          _invite_code: code,
+        });
+        if (!rpcError && rpcData) {
+          const joinedGroupId = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+          if (joinedGroupId) {
+            invalidateGroupQueries();
+            toast.success('¡Te uniste al grupo!');
+            setJoinCode('');
+            setJoinOpen(false);
+            navigate(`/groups/${joinedGroupId}`);
+            return;
+          }
+        }
+      } catch (_) { /* fallthrough */ }
+
+      // Direct join fallback
+      const { data: group, error: findError } = await supabase
+        .from('groups')
+        .select('id, name')
+        .eq('invite_code', code)
+        .single();
+
+      if (findError || !group) throw new Error('Código de invitación no encontrado');
+
+      const { data: existing } = await supabase
+        .from('group_members')
+        .select('id')
+        .eq('group_id', group.id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existing) {
+        toast.info('Ya eres miembro de este grupo');
+        setJoinCode('');
+        setJoinOpen(false);
+        navigate(`/groups/${group.id}`);
+        return;
       }
 
+      const { error: joinError } = await supabase
+        .from('group_members')
+        .insert({ group_id: group.id, user_id: user.id, role: 'member' });
+
+      if (joinError) throw joinError;
+
       invalidateGroupQueries();
-      toast.success('¡Te uniste al grupo!');
+      toast.success(`¡Te uniste a ${group.name}!`);
       setJoinCode('');
       setJoinOpen(false);
-      navigate(`/groups/${joinedGroupId}`);
+      navigate(`/groups/${group.id}`);
     } catch (error: any) {
-      const message = error?.message ?? 'Error uniéndote';
-      toast.error(message);
+      console.error('Error uniéndose:', error);
+      toast.error(error?.message ?? 'Error uniéndote al grupo');
     } finally {
       setLoading(false);
     }
@@ -131,7 +218,6 @@ export default function GroupsPage() {
           <p className="text-sm text-muted-foreground">Compite con amigos</p>
         </div>
 
-        {/* Action buttons */}
         <div className="px-5 flex gap-3 pb-4">
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
@@ -143,7 +229,7 @@ export default function GroupsPage() {
               <DialogHeader>
                 <DialogTitle>Crear grupo</DialogTitle>
                 <DialogDescription>
-                  Crea un grupo con código único para competir con tus amigos.
+                  Crea un grupo y comparte el código con tus amigos.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 pt-2">
@@ -152,6 +238,7 @@ export default function GroupsPage() {
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
                   maxLength={30}
+                  onKeyDown={(e) => e.key === 'Enter' && !loading && handleCreate()}
                 />
                 <div className="flex items-center justify-between">
                   <Label htmlFor="public-toggle" className="text-sm text-muted-foreground flex items-center gap-2">
@@ -161,7 +248,7 @@ export default function GroupsPage() {
                   <Switch id="public-toggle" checked={isPublic} onCheckedChange={setIsPublic} />
                 </div>
                 <Button onClick={handleCreate} disabled={loading || !groupName.trim()} className="w-full">
-                  {loading ? 'Creando...' : 'Crear'}
+                  {loading ? 'Creando...' : 'Crear grupo'}
                 </Button>
               </div>
             </DialogContent>
@@ -177,7 +264,7 @@ export default function GroupsPage() {
               <DialogHeader>
                 <DialogTitle>Unirse a grupo</DialogTitle>
                 <DialogDescription>
-                  Ingresa el código de invitación para entrar a un grupo existente.
+                  Ingresa el código de invitación.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 pt-2">
@@ -186,19 +273,19 @@ export default function GroupsPage() {
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                   maxLength={9}
+                  onKeyDown={(e) => e.key === 'Enter' && !loading && handleJoin()}
                 />
                 <Button onClick={handleJoin} disabled={loading || !joinCode.trim()} className="w-full">
-                  {loading ? 'Uniéndose...' : 'Unirse'}
+                  {loading ? 'Uniéndose...' : 'Unirse al grupo'}
                 </Button>
               </div>
             </DialogContent>
           </Dialog>
         </div>
 
-        {/* Groups list */}
         <div className="px-5 space-y-3">
           {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">Cargando...</div>
+            <div className="text-center py-8 text-muted-foreground text-sm">Cargando grupos...</div>
           ) : myGroups && myGroups.length > 0 ? (
             myGroups.map((g: any) => (
               <button
