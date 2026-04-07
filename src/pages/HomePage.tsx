@@ -145,11 +145,12 @@ export default function HomePage() {
 
         {/* Hero Avatar with Aura */}
         <AvatarHero
-          avatarUrl={avatarConfig?.avatar_url}
+          avatarConfig={avatarConfig}
           username={profile.username}
           level={level}
           levelName={levelName}
           dominantAttribute={dominant}
+          attrs={attrs}
           onClick={() => setEditorOpen(true)}
         />
 
