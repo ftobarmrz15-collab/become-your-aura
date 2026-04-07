@@ -1,17 +1,22 @@
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { MobileLayout } from '@/components/MobileLayout';
 import { BottomNav } from '@/components/BottomNav';
-import { AvatarCircle } from '@/components/AvatarCircle';
+import { AvatarDisplay } from '@/components/AvatarDisplay';
+import { AvatarEditor } from '@/components/AvatarEditor';
 import { XPBar } from '@/components/XPBar';
 import { LEVEL_NAMES, LEVEL_THRESHOLDS, getLevelFromXP, getXPForNextLevel, getDominantAttribute, type AttributeName } from '@/lib/constants';
 import { Flame } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useAvatarConfig } from '@/hooks/useAvatarConfig';
 
 export default function HomePage() {
   const { user } = useAuth();
+  const [editorOpen, setEditorOpen] = useState(false);
+  const { config: avatarConfig } = useAvatarConfig();
 
   const { data: profile } = useQuery({
     queryKey: ['profile', user?.id],
@@ -96,7 +101,13 @@ export default function HomePage() {
 
         {/* Avatar section */}
         <div className="flex flex-col items-center gap-4">
-          <AvatarCircle dominantAttribute={dominant} level={level} username={profile.username} />
+          <AvatarDisplay
+            dominantAttribute={dominant}
+            level={level}
+            username={profile.username}
+            avatarUrl={avatarConfig?.avatar_url}
+            onClick={() => setEditorOpen(true)}
+          />
           <div className="text-center mt-2">
             <p className="text-sm font-medium text-foreground">Nivel {level} — {levelName}</p>
           </div>
@@ -159,6 +170,7 @@ export default function HomePage() {
         )}
       </div>
       <BottomNav />
+      <AvatarEditor open={editorOpen} onClose={() => setEditorOpen(false)} />
     </MobileLayout>
   );
 }

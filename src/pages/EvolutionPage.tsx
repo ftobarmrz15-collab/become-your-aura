@@ -1,15 +1,20 @@
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { MobileLayout } from '@/components/MobileLayout';
 import { BottomNav } from '@/components/BottomNav';
-import { AvatarCircle } from '@/components/AvatarCircle';
+import { AvatarDisplay } from '@/components/AvatarDisplay';
+import { AvatarEditor } from '@/components/AvatarEditor';
 import { XPBar } from '@/components/XPBar';
 import { AttributeBar } from '@/components/AttributeBar';
 import { LEVEL_NAMES, LEVEL_THRESHOLDS, ATTRIBUTES, ATTRIBUTE_LABELS, ATTRIBUTE_COLORS, getLevelFromXP, getXPForNextLevel, getDominantAttribute, type AttributeName } from '@/lib/constants';
+import { useAvatarConfig } from '@/hooks/useAvatarConfig';
 
 export default function EvolutionPage() {
   const { user } = useAuth();
+  const [editorOpen, setEditorOpen] = useState(false);
+  const { config: avatarConfig } = useAvatarConfig();
 
   const { data: avatar } = useQuery({
     queryKey: ['avatar', user?.id],
@@ -47,7 +52,14 @@ export default function EvolutionPage() {
         <h1 className="text-xl font-bold text-foreground">Evolución</h1>
 
         <div className="flex flex-col items-center gap-4">
-          <AvatarCircle size={140} dominantAttribute={dominant} level={level} username={profile.username} />
+          <AvatarDisplay
+            size={140}
+            dominantAttribute={dominant}
+            level={level}
+            username={profile.username}
+            avatarUrl={avatarConfig?.avatar_url}
+            onClick={() => setEditorOpen(true)}
+          />
           <p className="text-sm font-medium text-foreground mt-2">
             Nivel {level} — {LEVEL_NAMES[level]}
           </p>
@@ -88,6 +100,7 @@ export default function EvolutionPage() {
         </div>
       </div>
       <BottomNav />
+      <AvatarEditor open={editorOpen} onClose={() => setEditorOpen(false)} />
     </MobileLayout>
   );
 }
