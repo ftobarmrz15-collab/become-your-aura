@@ -120,16 +120,20 @@ export default function ProfilePage() {
         <h1 className="text-xl font-bold text-foreground">Perfil</h1>
 
         <div className="flex flex-col items-center gap-3">
-          <AvatarDisplay
-            size={100}
-            dominantAttribute={dominant}
-            level={level}
-            username={profile.username}
-            avatarUrl={avatarConfig?.avatar_url}
-            onClick={() => setEditorOpen(true)}
-          />
+          <div className="cursor-pointer" onClick={() => setEditorOpen(true)}>
+            <div className="bg-card rounded-2xl border border-border p-2">
+              <AvatarSVG
+                config={{ skin_tone: avatarConfig?.skin_tone ?? 'medium', hair_style: avatarConfig?.hair_style ?? 'short', hair_color: avatarConfig?.hair_color ?? 'black', outfit: avatarConfig?.outfit ?? 'casual', facial_hair: avatarConfig?.facial_hair ?? 'none', eye_color: avatarConfig?.eye_color ?? 'brown' }}
+                attributes={attrs}
+                size={100}
+              />
+            </div>
+          </div>
           <p className="text-lg font-semibold text-foreground">{profile.username}</p>
           <p className="text-sm text-muted-foreground">Nivel {level} — {LEVEL_NAMES[level]}</p>
+          <Button variant="outline" size="sm" onClick={() => setEditorOpen(true)} className="gap-1.5 text-xs">
+            ✏️ Editar avatar
+          </Button>
         </div>
 
         {/* Monthly goal */}
