@@ -167,7 +167,7 @@ export default function GroupDetailPage() {
                     <span className="text-xs font-bold text-muted-foreground">{initials}</span>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/profile/${m.user_id}`)}>
                   <div className="flex items-center gap-1">
                     <p className="text-sm font-medium text-foreground truncate">{m.profile?.username ?? 'Usuario'}</p>
                     {m.role === 'creator' && <Crown className="w-3 h-3 text-yellow-500 shrink-0" />}

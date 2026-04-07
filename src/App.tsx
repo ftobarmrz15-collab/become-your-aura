@@ -15,6 +15,7 @@ import EvolutionPage from "./pages/EvolutionPage";
 import GroupsPage from "./pages/GroupsPage";
 import GroupDetailPage from "./pages/GroupDetailPage";
 import ProfilePage from "./pages/ProfilePage";
+import PublicProfilePage from "./pages/PublicProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -65,6 +66,7 @@ function AppRoutes() {
       <Route path="/groups" element={<GroupsPage />} />
       <Route path="/groups/:groupId" element={<GroupDetailPage />} />
       <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/profile/:userId" element={<PublicProfilePage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
