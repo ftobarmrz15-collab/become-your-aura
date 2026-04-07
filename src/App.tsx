@@ -12,6 +12,8 @@ import HomePage from "./pages/HomePage";
 import ActivitiesPage from "./pages/ActivitiesPage";
 import NewActivityPage from "./pages/NewActivityPage";
 import EvolutionPage from "./pages/EvolutionPage";
+import GroupsPage from "./pages/GroupsPage";
+import GroupDetailPage from "./pages/GroupDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
