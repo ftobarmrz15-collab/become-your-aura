@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import AvatarSVG from '@/components/AvatarSVG';
+import { EvolutionTab } from '@/components/EvolutionTab';
 import {
   AvatarConfig,
   SKIN_TONES, HAIR_STYLES, HAIR_COLORS,
@@ -113,6 +114,7 @@ export function AvatarEditor({ open, onClose }: AvatarEditorProps) {
             <TabsTrigger value="face" className="text-xs">Cara</TabsTrigger>
             <TabsTrigger value="hair" className="text-xs">Cabello</TabsTrigger>
             <TabsTrigger value="outfit" className="text-xs">Outfit</TabsTrigger>
+            <TabsTrigger value="evolution" className="text-xs">Evolución</TabsTrigger>
           </TabsList>
 
           <div className="flex-1 overflow-y-auto px-5 pb-4">
@@ -198,6 +200,10 @@ export function AvatarEditor({ open, onClose }: AvatarEditorProps) {
                   ))}
                 </div>
               </Section>
+            </TabsContent>
+
+            <TabsContent value="evolution" className="mt-4">
+              <EvolutionTab attrs={attrs} />
             </TabsContent>
           </div>
         </Tabs>
