@@ -1,21 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MobileLayout } from '@/components/MobileLayout';
 import { BottomNav } from '@/components/BottomNav';
-import { AvatarDisplay } from '@/components/AvatarDisplay';
+import { AvatarHero } from '@/components/AvatarHero';
 import { AvatarEditor } from '@/components/AvatarEditor';
 import { XPBar } from '@/components/XPBar';
-import { LEVEL_NAMES, LEVEL_THRESHOLDS, getLevelFromXP, getXPForNextLevel, getDominantAttribute, type AttributeName } from '@/lib/constants';
-import { Flame } from 'lucide-react';
+import { DisciplinePanel } from '@/components/DisciplinePanel';
+import { DailyStats } from '@/components/DailyStats';
+import { XPToast } from '@/components/XPToast';
+import { LEVEL_NAMES, LEVEL_THRESHOLDS, ATTRIBUTES, getLevelFromXP, getXPForNextLevel, getDominantAttribute, type AttributeName } from '@/lib/constants';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useAvatarConfig } from '@/hooks/useAvatarConfig';
 
 export default function HomePage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [editorOpen, setEditorOpen] = useState(false);
+  const [xpToast, setXpToast] = useState<{ xp: number; attribute: string } | null>(null);
   const { config: avatarConfig } = useAvatarConfig();
 
   const { data: profile } = useQuery({
@@ -45,20 +49,6 @@ export default function HomePage() {
     enabled: !!user,
   });
 
-  const { data: recentActivities } = useQuery({
-    queryKey: ['recent-activities', user?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('activities')
-        .select('*, activity_types(*)')
-        .eq('user_id', user!.id)
-        .order('completed_at', { ascending: false })
-        .limit(3);
-      return data ?? [];
-    },
-    enabled: !!user,
-  });
-
   const { data: todayActivities } = useQuery({
     queryKey: ['today-activities', user?.id],
     queryFn: async () => {
@@ -74,58 +64,116 @@ export default function HomePage() {
     enabled: !!user,
   });
 
+  const { data: recentActivities } = useQuery({
+    queryKey: ['recent-activities', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('activities')
+        .select('*, activity_types(*)')
+        .eq('user_id', user!.id)
+        .order('completed_at', { ascending: false })
+        .limit(3);
+      return data ?? [];
+    },
+    enabled: !!user,
+  });
+
+  // Realtime subscription for activities
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('home-activities')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'activities', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const newActivity = payload.new as any;
+          // Show XP toast
+          if (newActivity.xp_earned > 0) {
+            const deltas = newActivity.attribute_deltas as Record<string, number> | null;
+            const topAttr = deltas
+              ? Object.entries(deltas).sort(([, a], [, b]) => (b as number) - (a as number))[0]?.[0] || 'XP'
+              : 'XP';
+            setXpToast({ xp: newActivity.xp_earned, attribute: topAttr });
+          }
+          // Invalidate all relevant queries
+          queryClient.invalidateQueries({ queryKey: ['avatar', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['streak', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['today-activities', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['recent-activities', user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user, queryClient]);
+
   if (!profile || !avatar) return null;
 
   const level = getLevelFromXP(avatar.total_xp);
   const levelName = LEVEL_NAMES[level];
   const nextLevelXP = getXPForNextLevel(level);
   const currentLevelXP = LEVEL_THRESHOLDS[level];
-  const dominant = getDominantAttribute({
-    strength: avatar.strength, discipline: avatar.discipline,
-    creativity: avatar.creativity, charisma: avatar.charisma,
-    flow: avatar.flow, courage: avatar.courage,
-    focus: avatar.focus, freedom: avatar.freedom,
-  });
+
+  const attrs: Record<string, number> = {};
+  for (const a of ATTRIBUTES) attrs[a] = (avatar as any)[a] ?? 0;
+  const dominant = getDominantAttribute(attrs);
+
+  const xpToday = todayActivities?.reduce((sum: number, a: any) => sum + (a.xp_earned || 0), 0) ?? 0;
+  const xpToNextLevel = nextLevelXP - avatar.total_xp;
 
   const today = new Date();
   const dateStr = today.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
     <MobileLayout>
-      <div className="px-5 pt-12 pb-24 space-y-6">
+      <div className="relative pb-24 overflow-y-auto">
+        {/* XP Toast overlay */}
+        <XPToast
+          xp={xpToast?.xp ?? 0}
+          attribute={xpToast?.attribute ?? ''}
+          visible={!!xpToast}
+          onDone={() => setXpToast(null)}
+        />
+
         {/* Header */}
-        <div>
+        <div className="px-5 pt-10 pb-2">
           <h1 className="text-xl font-bold text-foreground">Hola, {profile.username}</h1>
           <p className="text-sm text-muted-foreground capitalize">{dateStr}</p>
         </div>
 
-        {/* Avatar section */}
-        <div className="flex flex-col items-center gap-4">
-          <AvatarDisplay
-            dominantAttribute={dominant}
-            level={level}
-            username={profile.username}
-            avatarUrl={avatarConfig?.avatar_url}
-            onClick={() => setEditorOpen(true)}
-          />
-          <div className="text-center mt-2">
-            <p className="text-sm font-medium text-foreground">Nivel {level} — {levelName}</p>
-          </div>
-          <div className="w-full max-w-[280px]">
-            <XPBar currentXP={avatar.total_xp} nextLevelXP={nextLevelXP} previousLevelXP={currentLevelXP} />
-          </div>
+        {/* Hero Avatar with Aura */}
+        <AvatarHero
+          avatarUrl={avatarConfig?.avatar_url}
+          username={profile.username}
+          level={level}
+          levelName={levelName}
+          dominantAttribute={dominant}
+          onClick={() => setEditorOpen(true)}
+        />
+
+        {/* XP Progress Bar */}
+        <div className="px-5 pb-2">
+          <XPBar currentXP={avatar.total_xp} nextLevelXP={nextLevelXP} previousLevelXP={currentLevelXP} />
         </div>
 
-        {/* Streak */}
-        {streak && streak.current_streak > 0 && (
-          <div className="flex items-center justify-center gap-2 py-2">
-            <Flame className="w-5 h-5 text-accent" />
-            <span className="text-sm font-medium text-accent">{streak.current_streak} días seguidos</span>
-          </div>
-        )}
+        {/* Daily Stats Row */}
+        <div className="px-5 py-3">
+          <DailyStats
+            xpToday={xpToday}
+            currentStreak={streak?.current_streak ?? 0}
+            nextMilestone={xpToNextLevel <= 50 ? `¡${xpToNextLevel} XP!` : undefined}
+          />
+        </div>
 
-        {/* Today section */}
-        <div>
+        {/* Discipline Panel */}
+        <div className="px-5 py-2">
+          <DisciplinePanel attrs={attrs} />
+        </div>
+
+        {/* Today's Activities */}
+        <div className="px-5 py-3">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Hoy</h2>
           {todayActivities && todayActivities.length > 0 ? (
             <div className="space-y-2">
@@ -150,7 +198,7 @@ export default function HomePage() {
 
         {/* Recent */}
         {recentActivities && recentActivities.length > 0 && (
-          <div>
+          <div className="px-5 py-3">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Recientes</h2>
             <div className="space-y-2">
               {recentActivities.map((a: any) => (
@@ -169,6 +217,7 @@ export default function HomePage() {
           </div>
         )}
       </div>
+
       <BottomNav />
       <AvatarEditor open={editorOpen} onClose={() => setEditorOpen(false)} />
     </MobileLayout>
