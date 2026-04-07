@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import AvatarSVG from '@/components/AvatarSVG';
+import { EvolutionTab } from '@/components/EvolutionTab';
 import {
   AvatarConfig,
   SKIN_TONES, HAIR_STYLES, HAIR_COLORS,
