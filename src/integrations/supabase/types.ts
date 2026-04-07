@@ -402,7 +402,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_group_with_code: {
+        Args: { _is_public?: boolean; _name: string }
+        Returns: {
+          created_at: string
+          created_by: string
+          id: string
+          invite_code: string
+          is_public: boolean
+          name: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "groups"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      is_group_creator: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_group_member: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      join_group_with_code: { Args: { _invite_code: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
