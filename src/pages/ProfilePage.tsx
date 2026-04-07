@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MobileLayout } from '@/components/MobileLayout';
 import { BottomNav } from '@/components/BottomNav';
-import { AvatarDisplay } from '@/components/AvatarDisplay';
+import AvatarSVG from '@/components/AvatarSVG';
 import { AvatarEditor } from '@/components/AvatarEditor';
 import { getLevelFromXP, getDominantAttribute, LEVEL_NAMES, ATTRIBUTES, type AttributeName } from '@/lib/constants';
 import { LogOut } from 'lucide-react';
