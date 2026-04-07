@@ -1,11 +1,11 @@
-import { Home, Zap, Plus, Star, User } from 'lucide-react';
+import { Home, Zap, Plus, Users, User } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const tabs = [
   { path: '/home', icon: Home, label: 'Inicio' },
   { path: '/activities', icon: Zap, label: 'Actividades' },
   { path: '/new-activity', icon: Plus, label: '', isCenter: true },
-  { path: '/evolution', icon: Star, label: 'Evolución' },
+  { path: '/groups', icon: Users, label: 'Grupos' },
   { path: '/profile', icon: User, label: 'Perfil' },
 ];
 

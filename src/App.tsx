@@ -12,6 +12,8 @@ import HomePage from "./pages/HomePage";
 import ActivitiesPage from "./pages/ActivitiesPage";
 import NewActivityPage from "./pages/NewActivityPage";
 import EvolutionPage from "./pages/EvolutionPage";
+import GroupsPage from "./pages/GroupsPage";
+import GroupDetailPage from "./pages/GroupDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
@@ -60,6 +62,8 @@ function AppRoutes() {
       <Route path="/activities" element={<ActivitiesPage />} />
       <Route path="/new-activity" element={<NewActivityPage />} />
       <Route path="/evolution" element={<EvolutionPage />} />
+      <Route path="/groups" element={<GroupsPage />} />
+      <Route path="/groups/:groupId" element={<GroupDetailPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
