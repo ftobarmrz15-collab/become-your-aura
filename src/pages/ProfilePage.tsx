@@ -8,6 +8,7 @@ import AvatarSVG from '@/components/AvatarSVG';
 import { AvatarEditor } from '@/components/AvatarEditor';
 import { getLevelFromXP, getDominantAttribute, LEVEL_NAMES, ATTRIBUTES, type AttributeName } from '@/lib/constants';
 import { LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useAvatarConfig } from '@/hooks/useAvatarConfig';
 
