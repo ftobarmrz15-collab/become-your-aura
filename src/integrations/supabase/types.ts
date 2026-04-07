@@ -85,6 +85,57 @@ export type Database = {
         }
         Relationships: []
       }
+      avatar_config: {
+        Row: {
+          avatar_url: string | null
+          eye_color: string
+          eye_shape: string
+          face_shape: string
+          facial_hair: string
+          hair_color: string
+          hair_style: string
+          id: string
+          mouth: string
+          nose: string
+          outfit: string
+          skin_tone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          eye_color?: string
+          eye_shape?: string
+          face_shape?: string
+          facial_hair?: string
+          hair_color?: string
+          hair_style?: string
+          id?: string
+          mouth?: string
+          nose?: string
+          outfit?: string
+          skin_tone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          eye_color?: string
+          eye_shape?: string
+          face_shape?: string
+          facial_hair?: string
+          hair_color?: string
+          hair_style?: string
+          id?: string
+          mouth?: string
+          nose?: string
+          outfit?: string
+          skin_tone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       avatar_state: {
         Row: {
           charisma: number
@@ -159,6 +210,33 @@ export type Database = {
           last_activity_date?: string | null
           max_streak?: number
           shield_available?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      unlocked_accessories: {
+        Row: {
+          accessory_name: string
+          equipped: boolean
+          id: string
+          slot: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          accessory_name: string
+          equipped?: boolean
+          id?: string
+          slot: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          accessory_name?: string
+          equipped?: boolean
+          id?: string
+          slot?: string
+          unlocked_at?: string
           user_id?: string
         }
         Relationships: []
