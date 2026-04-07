@@ -62,6 +62,8 @@ function AppRoutes() {
       <Route path="/activities" element={<ActivitiesPage />} />
       <Route path="/new-activity" element={<NewActivityPage />} />
       <Route path="/evolution" element={<EvolutionPage />} />
+      <Route path="/groups" element={<GroupsPage />} />
+      <Route path="/groups/:groupId" element={<GroupDetailPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
