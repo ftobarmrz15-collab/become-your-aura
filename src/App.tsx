@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { SplashScreen } from "@/components/SplashScreen";
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import HomePage from "./pages/HomePage";
@@ -22,6 +24,7 @@ const queryClient = new QueryClient();
 
 function AppRoutes() {
   const { user, loading } = useAuth();
+  const [splashDone, setSplashDone] = useState(false);
 
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile-check', user?.id],
@@ -32,10 +35,17 @@ function AppRoutes() {
     enabled: !!user,
   });
 
+  // Show splash on first load only
+  const [showSplash, setShowSplash] = useState(true);
+
+  if (showSplash) {
+    return <SplashScreen onDone={() => setShowSplash(false)} />;
+  }
+
   if (loading || (user && profileLoading)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-foreground text-lg font-bold tracking-tight">AURA</div>
+        <div className="text-foreground text-lg font-bold tracking-tight animate-pulse">AURA</div>
       </div>
     );
   }
