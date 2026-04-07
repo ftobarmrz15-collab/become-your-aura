@@ -28,7 +28,8 @@ export default function GroupDetailPage() {
   const { data: group } = useQuery({
     queryKey: ['group', groupId],
     queryFn: async () => {
-      const { data } = await supabase.from('groups').select('*').eq('id', groupId!).single();
+      const { data, error } = await supabase.from('groups').select('*').eq('id', groupId!).single();
+      if (error) throw error;
       return data;
     },
     enabled: !!groupId,
@@ -37,29 +38,37 @@ export default function GroupDetailPage() {
   const { data: members } = useQuery({
     queryKey: ['group-members', groupId],
     queryFn: async () => {
-      const { data: memberships } = await supabase
+      const { data: memberships, error: membershipsError } = await supabase
         .from('group_members')
         .select('user_id, role, joined_at')
         .eq('group_id', groupId!);
+
+      if (membershipsError) throw membershipsError;
 
       if (!memberships?.length) return [];
 
       const userIds = memberships.map((m: any) => m.user_id);
 
-      const { data: profiles } = await supabase
+      const { data: profiles, error: profilesError } = await supabase
         .from('users')
         .select('user_id, username, display_name')
         .in('user_id', userIds);
 
-      const { data: avatars } = await supabase
+      if (profilesError) throw profilesError;
+
+      const { data: avatars, error: avatarsError } = await supabase
         .from('avatar_state')
         .select('*')
         .in('user_id', userIds);
 
-      const { data: configs } = await supabase
+      if (avatarsError) throw avatarsError;
+
+      const { data: configs, error: configsError } = await supabase
         .from('avatar_config')
         .select('user_id, avatar_url')
         .in('user_id', userIds);
+
+      if (configsError) throw configsError;
 
       return memberships.map((m: any) => {
         const profile = profiles?.find((p: any) => p.user_id === m.user_id);
