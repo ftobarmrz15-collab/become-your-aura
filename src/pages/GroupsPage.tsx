@@ -7,7 +7,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { Users, Plus, LogIn, Crown, Lock, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -30,6 +30,11 @@ export default function GroupsPage() {
   const [isPublic, setIsPublic] = useState(false);
   const [joinCode, setJoinCode] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const invalidateGroupQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['my-groups', user?.id] });
+    queryClient.invalidateQueries({ queryKey: ['my-groups'] });
+  };
 
   const { data: myGroups, isLoading } = useQuery({
     queryKey: ['my-groups', user?.id],
@@ -61,31 +66,30 @@ export default function GroupsPage() {
       toast.error('Máximo 3 grupos permitidos');
       return;
     }
+
     setLoading(true);
-    const code = generateInviteCode();
-    const { data: group, error } = await supabase
-      .from('groups')
-      .insert({ name: groupName.trim(), invite_code: code, created_by: user.id, is_public: isPublic })
-      .select()
-      .single();
 
-    if (error) {
-      toast.error('Error creando grupo');
+    try {
+      const { data: group, error } = await supabase.rpc('create_group_with_code', {
+        _name: groupName.trim(),
+        _is_public: isPublic,
+      });
+
+      if (error || !group) {
+        throw error ?? new Error('No se pudo crear el grupo');
+      }
+
+      invalidateGroupQueries();
+      toast.success(`Grupo creado. Código: ${group.invite_code}`);
+      setGroupName('');
+      setCreateOpen(false);
+      navigate(`/groups/${group.id}`);
+    } catch (error: any) {
+      const message = error?.message ?? 'Error creando grupo';
+      toast.error(message);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    await supabase.from('group_members').insert({
-      group_id: group.id,
-      user_id: user.id,
-      role: 'creator',
-    });
-
-    queryClient.invalidateQueries({ queryKey: ['my-groups'] });
-    toast.success(`Grupo creado. Código: ${code}`);
-    setGroupName('');
-    setCreateOpen(false);
-    setLoading(false);
   };
 
   const handleJoin = async () => {
@@ -94,36 +98,29 @@ export default function GroupsPage() {
       toast.error('Máximo 3 grupos permitidos');
       return;
     }
+
     setLoading(true);
-    const { data: group } = await supabase
-      .from('groups')
-      .select('id')
-      .eq('invite_code', joinCode.trim().toUpperCase())
-      .single();
 
-    if (!group) {
-      toast.error('Código no encontrado');
+    try {
+      const { data: joinedGroupId, error } = await supabase.rpc('join_group_with_code', {
+        _invite_code: joinCode.trim().toUpperCase(),
+      });
+
+      if (error || !joinedGroupId) {
+        throw error ?? new Error('No se pudo unir al grupo');
+      }
+
+      invalidateGroupQueries();
+      toast.success('¡Te uniste al grupo!');
+      setJoinCode('');
+      setJoinOpen(false);
+      navigate(`/groups/${joinedGroupId}`);
+    } catch (error: any) {
+      const message = error?.message ?? 'Error uniéndote';
+      toast.error(message);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const { error } = await supabase.from('group_members').insert({
-      group_id: group.id,
-      user_id: user.id,
-      role: 'member',
-    });
-
-    if (error) {
-      toast.error(error.code === '23505' ? 'Ya eres miembro' : 'Error uniéndote');
-      setLoading(false);
-      return;
-    }
-
-    queryClient.invalidateQueries({ queryKey: ['my-groups'] });
-    toast.success('¡Te uniste al grupo!');
-    setJoinCode('');
-    setJoinOpen(false);
-    setLoading(false);
   };
 
   return (
@@ -145,6 +142,9 @@ export default function GroupsPage() {
             <DialogContent className="max-w-[350px]">
               <DialogHeader>
                 <DialogTitle>Crear grupo</DialogTitle>
+                <DialogDescription>
+                  Crea un grupo con código único para competir con tus amigos.
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 pt-2">
                 <Input
@@ -176,6 +176,9 @@ export default function GroupsPage() {
             <DialogContent className="max-w-[350px]">
               <DialogHeader>
                 <DialogTitle>Unirse a grupo</DialogTitle>
+                <DialogDescription>
+                  Ingresa el código de invitación para entrar a un grupo existente.
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 pt-2">
                 <Input
