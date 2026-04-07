@@ -48,6 +48,8 @@ export function useAvatarConfig() {
         mouth: newConfig.mouth,
         facial_hair: newConfig.facial_hair,
         outfit: newConfig.outfit,
+        gender: newConfig.gender,
+        eyebrows: newConfig.eyebrows,
       })
       .eq('user_id', user.id);
 
