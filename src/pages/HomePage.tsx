@@ -15,6 +15,18 @@ import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useAvatarConfig } from '@/hooks/useAvatarConfig';
 
+// Subtle gradient per dominant attribute
+const AURA_GRADIENTS: Record<string, string> = {
+  strength:   'radial-gradient(ellipse at top, hsla(0,60%,25%,0.18) 0%, transparent 65%)',
+  discipline: 'radial-gradient(ellipse at top, hsla(38,60%,25%,0.18) 0%, transparent 65%)',
+  creativity: 'radial-gradient(ellipse at top, hsla(271,60%,25%,0.18) 0%, transparent 65%)',
+  charisma:   'radial-gradient(ellipse at top, hsla(50,60%,25%,0.18) 0%, transparent 65%)',
+  flow:       'radial-gradient(ellipse at top, hsla(142,60%,20%,0.18) 0%, transparent 65%)',
+  courage:    'radial-gradient(ellipse at top, hsla(25,60%,25%,0.18) 0%, transparent 65%)',
+  focus:      'radial-gradient(ellipse at top, hsla(217,60%,25%,0.18) 0%, transparent 65%)',
+  freedom:    'radial-gradient(ellipse at top, hsla(173,60%,20%,0.18) 0%, transparent 65%)',
+};
+
 export default function HomePage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -78,10 +90,8 @@ export default function HomePage() {
     enabled: !!user,
   });
 
-  // Realtime subscription for activities
   useEffect(() => {
     if (!user) return;
-
     const channel = supabase
       .channel('home-activities')
       .on(
@@ -89,7 +99,6 @@ export default function HomePage() {
         { event: 'INSERT', schema: 'public', table: 'activities', filter: `user_id=eq.${user.id}` },
         (payload) => {
           const newActivity = payload.new as any;
-          // Show XP toast
           if (newActivity.xp_earned > 0) {
             const deltas = newActivity.attribute_deltas as Record<string, number> | null;
             const topAttr = deltas
@@ -97,7 +106,6 @@ export default function HomePage() {
               : 'XP';
             setXpToast({ xp: newActivity.xp_earned, attribute: topAttr });
           }
-          // Invalidate all relevant queries
           queryClient.invalidateQueries({ queryKey: ['avatar', user.id] });
           queryClient.invalidateQueries({ queryKey: ['streak', user.id] });
           queryClient.invalidateQueries({ queryKey: ['today-activities', user.id] });
@@ -105,7 +113,6 @@ export default function HomePage() {
         }
       )
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [user, queryClient]);
 
@@ -126,10 +133,17 @@ export default function HomePage() {
   const today = new Date();
   const dateStr = today.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
+  const auraGradient = AURA_GRADIENTS[dominant] ?? AURA_GRADIENTS.strength;
+
   return (
     <MobileLayout>
-      <div className="relative pb-24 overflow-y-auto">
-        {/* XP Toast overlay */}
+      {/* Aura background gradient */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{ background: auraGradient, transition: 'background 1.5s ease' }}
+      />
+
+      <div className="relative z-10 pb-24 overflow-y-auto">
         <XPToast
           xp={xpToast?.xp ?? 0}
           attribute={xpToast?.attribute ?? ''}
@@ -137,13 +151,11 @@ export default function HomePage() {
           onDone={() => setXpToast(null)}
         />
 
-        {/* Header */}
         <div className="px-5 pt-10 pb-2">
           <h1 className="text-xl font-bold text-foreground">Hola, {profile.username}</h1>
           <p className="text-sm text-muted-foreground capitalize">{dateStr}</p>
         </div>
 
-        {/* Hero Avatar with Aura */}
         <AvatarHero
           avatarConfig={avatarConfig}
           username={profile.username}
@@ -154,12 +166,10 @@ export default function HomePage() {
           onClick={() => setEditorOpen(true)}
         />
 
-        {/* XP Progress Bar */}
         <div className="px-5 pb-2">
           <XPBar currentXP={avatar.total_xp} nextLevelXP={nextLevelXP} previousLevelXP={currentLevelXP} />
         </div>
 
-        {/* Daily Stats Row */}
         <div className="px-5 py-3">
           <DailyStats
             xpToday={xpToday}
@@ -168,7 +178,6 @@ export default function HomePage() {
           />
         </div>
 
-        {/* Discipline Panel */}
         <div className="px-5 py-2">
           <DisciplinePanel attrs={attrs} />
         </div>
