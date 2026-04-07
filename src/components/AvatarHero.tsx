@@ -1,12 +1,21 @@
 import { useMemo } from 'react';
 import { ATTRIBUTE_COLORS, type AttributeName } from '@/lib/constants';
+import AvatarSVG from '@/components/AvatarSVG';
 
 interface AvatarHeroProps {
-  avatarUrl?: string | null;
+  avatarConfig?: {
+    skin_tone: string;
+    hair_style: string;
+    hair_color: string;
+    outfit: string;
+    facial_hair: string;
+    eye_color: string;
+  } | null;
   username: string;
   level: number;
   levelName: string;
   dominantAttribute: AttributeName;
+  attrs: Record<string, number>;
   onClick?: () => void;
 }
 
@@ -17,13 +26,12 @@ function getAuraConfig(level: number) {
   return { colors: ['hsl(240 10% 55%)', 'hsl(240 10% 40%)'], intensity: 0.15, animated: false, label: 'Tenue' };
 }
 
-export function AvatarHero({ avatarUrl, username, level, levelName, dominantAttribute, onClick }: AvatarHeroProps) {
+export function AvatarHero({ avatarConfig, username, level, levelName, dominantAttribute, attrs, onClick }: AvatarHeroProps) {
   const aura = useMemo(() => getAuraConfig(level), [level]);
   const ringColor = ATTRIBUTE_COLORS[dominantAttribute];
-  const initials = username ? username.slice(0, 2).toUpperCase() : '??';
 
   return (
-    <div className="relative flex flex-col items-center pt-8 pb-4">
+    <div className="relative flex flex-col items-center pt-4 pb-2">
       {/* Aura background glow */}
       <div
         className={`absolute top-0 left-1/2 -translate-x-1/2 w-[280px] h-[280px] rounded-full blur-[80px] transition-all duration-1000 ${aura.animated ? 'animate-aura-rotate' : 'animate-aura-pulse'}`}
@@ -35,26 +43,26 @@ export function AvatarHero({ avatarUrl, username, level, levelName, dominantAttr
         }}
       />
 
-      {/* Avatar container */}
+      {/* Avatar SVG container */}
       <div
         className={`relative z-10 ${onClick ? 'cursor-pointer' : ''}`}
         onClick={onClick}
       >
-        {/* Outer ring with pulse */}
         <div
-          className="w-[140px] h-[140px] rounded-full p-[3px] animate-ring-pulse"
+          className="rounded-2xl p-1 animate-ring-pulse"
           style={{
-            background: `linear-gradient(135deg, ${ringColor}, ${ringColor}80)`,
-            boxShadow: `0 0 30px ${ringColor}40, 0 0 60px ${ringColor}20`,
+            background: `linear-gradient(135deg, ${ringColor}40, transparent, ${ringColor}40)`,
           }}
         >
-          <div className="w-full h-full rounded-full bg-card overflow-hidden flex items-center justify-center">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-3xl font-bold text-foreground">{initials}</span>
-            )}
-          </div>
+          {avatarConfig ? (
+            <AvatarSVG config={avatarConfig} attributes={attrs} size={160} />
+          ) : (
+            <div className="w-[160px] h-[200px] flex items-center justify-center">
+              <span className="text-4xl font-bold text-foreground">
+                {username ? username.slice(0, 2).toUpperCase() : '??'}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Level badge */}
