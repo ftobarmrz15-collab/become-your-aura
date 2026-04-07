@@ -3,6 +3,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useAvatarConfig } from '@/hooks/useAvatarConfig';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import AvatarSVG from '@/components/AvatarSVG';
 import {
   AvatarConfig,
   SKIN_TONES, HAIR_STYLES, HAIR_COLORS,
@@ -10,7 +14,8 @@ import {
   NOSES, MOUTHS, FACIAL_HAIR, OUTFITS,
   randomAvatarConfig,
 } from '@/lib/avatar-options';
-import { Shuffle, Sparkles, Save } from 'lucide-react';
+import { ATTRIBUTES } from '@/lib/constants';
+import { Shuffle, Save, X } from 'lucide-react';
 
 interface AvatarEditorProps {
   open: boolean;
@@ -18,9 +23,24 @@ interface AvatarEditorProps {
 }
 
 export function AvatarEditor({ open, onClose }: AvatarEditorProps) {
-  const { config, saveConfig, generateAvatar, generating } = useAvatarConfig();
+  const { user } = useAuth();
+  const { config, saveConfig } = useAvatarConfig();
   const [draft, setDraft] = useState<AvatarConfig | null>(null);
   const [dirty, setDirty] = useState(false);
+
+  const { data: avatar } = useQuery({
+    queryKey: ['avatar', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from('avatar_state').select('*').eq('user_id', user!.id).single();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const attrs: Record<string, number> = {};
+  if (avatar) {
+    for (const a of ATTRIBUTES) attrs[a] = (avatar as any)[a] ?? 0;
+  }
 
   useEffect(() => {
     if (config && open) {
@@ -51,13 +71,11 @@ export function AvatarEditor({ open, onClose }: AvatarEditorProps) {
     if (!draft) return;
     await saveConfig(draft);
     setDirty(false);
+    onClose();
   };
 
-  const handleSaveAndGenerate = async () => {
-    if (!draft) return;
-    await saveConfig(draft);
+  const handleCancel = () => {
     setDirty(false);
-    await generateAvatar();
     onClose();
   };
 
@@ -67,22 +85,18 @@ export function AvatarEditor({ open, onClose }: AvatarEditorProps) {
   };
 
   return (
-    <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
+    <Sheet open={open} onOpenChange={(o) => !o && handleCancel()}>
       <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl bg-background border-border p-0 flex flex-col">
-        <SheetHeader className="px-5 pt-5 pb-3">
+        <SheetHeader className="px-5 pt-5 pb-2">
           <SheetTitle className="text-foreground text-lg">Personaliza tu Avatar</SheetTitle>
         </SheetHeader>
 
-        {/* Preview */}
-        <div className="flex items-center justify-center py-4 gap-3">
-          <div className="w-20 h-20 rounded-full bg-card border-2 border-primary flex items-center justify-center overflow-hidden">
-            {config?.avatar_url ? (
-              <img src={config.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-3xl">🧑</span>
-            )}
+        {/* Live SVG Preview */}
+        <div className="flex items-center justify-center py-2 gap-4">
+          <div className="bg-card rounded-2xl border border-border p-2">
+            <AvatarSVG config={draft} attributes={attrs} size={120} />
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             <Button variant="outline" size="sm" onClick={handleRandom} className="gap-1.5 text-xs">
               <Shuffle className="w-3.5 h-3.5" /> Aleatorio
             </Button>
@@ -99,7 +113,6 @@ export function AvatarEditor({ open, onClose }: AvatarEditorProps) {
 
           <div className="flex-1 overflow-y-auto px-5 pb-4">
             <TabsContent value="face" className="mt-4 space-y-5">
-              {/* Skin tone */}
               <Section title="Tono de piel">
                 <div className="flex flex-wrap gap-2">
                   {SKIN_TONES.map(t => (
@@ -114,17 +127,10 @@ export function AvatarEditor({ open, onClose }: AvatarEditorProps) {
                 </div>
               </Section>
 
-              {/* Face shape */}
-              <Section title="Forma de cara">
-                <ChipSelect options={FACE_SHAPES} value={draft.face_shape} onChange={v => update('face_shape', v)} />
-              </Section>
-
-              {/* Eye shape */}
               <Section title="Forma de ojos">
                 <ChipSelect options={EYE_SHAPES} value={draft.eye_shape} onChange={v => update('eye_shape', v)} />
               </Section>
 
-              {/* Eye color */}
               <Section title="Color de ojos">
                 <div className="flex flex-wrap gap-2">
                   {EYE_COLORS.map(c => (
@@ -139,24 +145,12 @@ export function AvatarEditor({ open, onClose }: AvatarEditorProps) {
                 </div>
               </Section>
 
-              {/* Nose */}
-              <Section title="Nariz">
-                <ChipSelect options={NOSES} value={draft.nose} onChange={v => update('nose', v)} />
-              </Section>
-
-              {/* Mouth */}
-              <Section title="Boca">
-                <ChipSelect options={MOUTHS} value={draft.mouth} onChange={v => update('mouth', v)} />
-              </Section>
-
-              {/* Facial hair */}
               <Section title="Vello facial">
                 <ChipSelect options={FACIAL_HAIR} value={draft.facial_hair} onChange={v => update('facial_hair', v)} />
               </Section>
             </TabsContent>
 
             <TabsContent value="hair" className="mt-4 space-y-5">
-              {/* Hair style */}
               <Section title="Estilo">
                 <div className="grid grid-cols-5 gap-2">
                   {HAIR_STYLES.map(h => (
@@ -172,7 +166,6 @@ export function AvatarEditor({ open, onClose }: AvatarEditorProps) {
                 </div>
               </Section>
 
-              {/* Hair color */}
               <Section title="Color">
                 <div className="flex flex-wrap gap-2">
                   {HAIR_COLORS.map(c => (
@@ -209,18 +202,15 @@ export function AvatarEditor({ open, onClose }: AvatarEditorProps) {
 
         {/* Bottom actions */}
         <div className="px-5 pb-6 pt-3 border-t border-border flex gap-3">
-          {dirty && (
-            <Button variant="outline" onClick={handleSave} className="gap-1.5 flex-1">
-              <Save className="w-4 h-4" /> Guardar
-            </Button>
-          )}
+          <Button variant="outline" onClick={handleCancel} className="gap-1.5 flex-1">
+            <X className="w-4 h-4" /> Cancelar
+          </Button>
           <Button
-            onClick={handleSaveAndGenerate}
-            disabled={generating}
+            onClick={handleSave}
+            disabled={!dirty}
             className="gap-1.5 flex-1 bg-primary hover:bg-primary/90"
           >
-            <Sparkles className="w-4 h-4" />
-            {generating ? 'Generando...' : 'Generar Avatar'}
+            <Save className="w-4 h-4" /> Guardar
           </Button>
         </div>
       </SheetContent>
