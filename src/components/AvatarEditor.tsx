@@ -12,6 +12,7 @@ import {
   SKIN_TONES, HAIR_STYLES, HAIR_COLORS,
   FACE_SHAPES, EYE_SHAPES, EYE_COLORS,
   NOSES, MOUTHS, FACIAL_HAIR, OUTFITS,
+  GENDERS, EYEBROWS,
   randomAvatarConfig,
 } from '@/lib/avatar-options';
 import { ATTRIBUTES } from '@/lib/constants';
@@ -55,6 +56,8 @@ export function AvatarEditor({ open, onClose }: AvatarEditorProps) {
         mouth: config.mouth,
         facial_hair: config.facial_hair,
         outfit: config.outfit,
+        gender: (config as any).gender ?? 'neutral',
+        eyebrows: (config as any).eyebrows ?? 'normal',
       });
       setDirty(false);
     }
@@ -84,6 +87,8 @@ export function AvatarEditor({ open, onClose }: AvatarEditorProps) {
     setDirty(true);
   };
 
+  const showFacialHair = draft.gender !== 'feminine';
+
   return (
     <Sheet open={open} onOpenChange={(o) => !o && handleCancel()}>
       <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl bg-background border-border p-0 flex flex-col">
@@ -91,7 +96,6 @@ export function AvatarEditor({ open, onClose }: AvatarEditorProps) {
           <SheetTitle className="text-foreground text-lg">Personaliza tu Avatar</SheetTitle>
         </SheetHeader>
 
-        {/* Live SVG Preview */}
         <div className="flex items-center justify-center py-2 gap-4">
           <div className="bg-card rounded-2xl border border-border p-2">
             <AvatarSVG config={draft} attributes={attrs} size={120} />
@@ -103,79 +107,80 @@ export function AvatarEditor({ open, onClose }: AvatarEditorProps) {
           </div>
         </div>
 
-        {/* Editor tabs */}
-        <Tabs defaultValue="face" className="flex-1 flex flex-col overflow-hidden">
+        <Tabs defaultValue="base" className="flex-1 flex flex-col overflow-hidden">
           <TabsList className="mx-5 bg-card">
+            <TabsTrigger value="base" className="text-xs">Base</TabsTrigger>
             <TabsTrigger value="face" className="text-xs">Cara</TabsTrigger>
             <TabsTrigger value="hair" className="text-xs">Cabello</TabsTrigger>
             <TabsTrigger value="outfit" className="text-xs">Outfit</TabsTrigger>
           </TabsList>
 
           <div className="flex-1 overflow-y-auto px-5 pb-4">
-            <TabsContent value="face" className="mt-4 space-y-5">
+            <TabsContent value="base" className="mt-4 space-y-5">
+              <Section title="Estilo base">
+                <ChipSelect options={GENDERS} value={draft.gender} onChange={v => update('gender', v)} />
+              </Section>
               <Section title="Tono de piel">
                 <div className="flex flex-wrap gap-2">
                   {SKIN_TONES.map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => update('skin_tone', t.id)}
+                    <button key={t.id} onClick={() => update('skin_tone', t.id)}
                       className={`w-10 h-10 rounded-full border-2 transition-all ${draft.skin_tone === t.id ? 'border-primary scale-110' : 'border-border'}`}
-                      style={{ backgroundColor: t.color }}
-                      title={t.label}
-                    />
+                      style={{ backgroundColor: t.color }} title={t.label} />
                   ))}
                 </div>
               </Section>
+              <Section title="Forma de cara">
+                <ChipSelect options={FACE_SHAPES} value={draft.face_shape} onChange={v => update('face_shape', v)} />
+              </Section>
+            </TabsContent>
 
+            <TabsContent value="face" className="mt-4 space-y-5">
+              <Section title="Cejas">
+                <ChipSelect options={EYEBROWS} value={draft.eyebrows} onChange={v => update('eyebrows', v)} />
+              </Section>
               <Section title="Forma de ojos">
                 <ChipSelect options={EYE_SHAPES} value={draft.eye_shape} onChange={v => update('eye_shape', v)} />
               </Section>
-
               <Section title="Color de ojos">
                 <div className="flex flex-wrap gap-2">
                   {EYE_COLORS.map(c => (
-                    <button
-                      key={c.id}
-                      onClick={() => update('eye_color', c.id)}
+                    <button key={c.id} onClick={() => update('eye_color', c.id)}
                       className={`w-8 h-8 rounded-full border-2 transition-all ${draft.eye_color === c.id ? 'border-primary scale-110' : 'border-border'}`}
-                      style={{ backgroundColor: c.color }}
-                      title={c.label}
-                    />
+                      style={{ backgroundColor: c.color }} title={c.label} />
                   ))}
                 </div>
               </Section>
-
-              <Section title="Vello facial">
-                <ChipSelect options={FACIAL_HAIR} value={draft.facial_hair} onChange={v => update('facial_hair', v)} />
+              <Section title="Nariz">
+                <ChipSelect options={NOSES} value={draft.nose} onChange={v => update('nose', v)} />
               </Section>
+              <Section title="Boca">
+                <ChipSelect options={MOUTHS} value={draft.mouth} onChange={v => update('mouth', v)} />
+              </Section>
+              {showFacialHair && (
+                <Section title="Vello facial">
+                  <ChipSelect options={FACIAL_HAIR} value={draft.facial_hair} onChange={v => update('facial_hair', v)} />
+                </Section>
+              )}
             </TabsContent>
 
             <TabsContent value="hair" className="mt-4 space-y-5">
               <Section title="Estilo">
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   {HAIR_STYLES.map(h => (
-                    <button
-                      key={h.id}
-                      onClick={() => update('hair_style', h.id)}
-                      className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-all ${draft.hair_style === h.id ? 'border-primary bg-primary/10' : 'border-border bg-card'}`}
-                    >
+                    <button key={h.id} onClick={() => update('hair_style', h.id)}
+                      className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-all ${draft.hair_style === h.id ? 'border-primary bg-primary/10' : 'border-border bg-card'}`}>
                       <span className="text-lg">{h.emoji}</span>
                       <span className="text-[10px] text-muted-foreground">{h.label}</span>
                     </button>
                   ))}
                 </div>
               </Section>
-
               <Section title="Color">
                 <div className="flex flex-wrap gap-2">
                   {HAIR_COLORS.map(c => (
-                    <button
-                      key={c.id}
-                      onClick={() => update('hair_color', c.id)}
+                    <button key={c.id} onClick={() => update('hair_color', c.id)}
                       className={`w-8 h-8 rounded-full border-2 transition-all ${draft.hair_color === c.id ? 'border-primary scale-110' : 'border-border'}`}
-                      style={{ backgroundColor: c.color }}
-                      title={c.label}
-                    />
+                      style={{ backgroundColor: c.color }} title={c.label} />
                   ))}
                 </div>
               </Section>
@@ -185,11 +190,8 @@ export function AvatarEditor({ open, onClose }: AvatarEditorProps) {
               <Section title="Outfit base">
                 <div className="grid grid-cols-3 gap-2">
                   {OUTFITS.map(o => (
-                    <button
-                      key={o.id}
-                      onClick={() => update('outfit', o.id)}
-                      className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all ${draft.outfit === o.id ? 'border-primary bg-primary/10' : 'border-border bg-card'}`}
-                    >
+                    <button key={o.id} onClick={() => update('outfit', o.id)}
+                      className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all ${draft.outfit === o.id ? 'border-primary bg-primary/10' : 'border-border bg-card'}`}>
                       <span className="text-2xl">{o.emoji}</span>
                       <span className="text-xs text-foreground">{o.label}</span>
                     </button>
@@ -200,16 +202,11 @@ export function AvatarEditor({ open, onClose }: AvatarEditorProps) {
           </div>
         </Tabs>
 
-        {/* Bottom actions */}
         <div className="px-5 pb-6 pt-3 border-t border-border flex gap-3">
           <Button variant="outline" onClick={handleCancel} className="gap-1.5 flex-1">
             <X className="w-4 h-4" /> Cancelar
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!dirty}
-            className="gap-1.5 flex-1 bg-primary hover:bg-primary/90"
-          >
+          <Button onClick={handleSave} disabled={!dirty} className="gap-1.5 flex-1 bg-primary hover:bg-primary/90">
             <Save className="w-4 h-4" /> Guardar
           </Button>
         </div>
@@ -235,11 +232,8 @@ function ChipSelect({ options, value, onChange }: {
   return (
     <div className="flex flex-wrap gap-2">
       {options.map(o => (
-        <button
-          key={o.id}
-          onClick={() => onChange(o.id)}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${value === o.id ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground'}`}
-        >
+        <button key={o.id} onClick={() => onChange(o.id)}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${value === o.id ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground'}`}>
           {o.label}
         </button>
       ))}
