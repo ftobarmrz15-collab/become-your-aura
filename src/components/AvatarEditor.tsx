@@ -201,6 +201,10 @@ export function AvatarEditor({ open, onClose }: AvatarEditorProps) {
                 </div>
               </Section>
             </TabsContent>
+
+            <TabsContent value="evolution" className="mt-4">
+              <EvolutionTab attrs={attrs} />
+            </TabsContent>
           </div>
         </Tabs>
 
