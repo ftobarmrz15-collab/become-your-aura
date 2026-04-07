@@ -6,6 +6,8 @@ import { MobileLayout } from '@/components/MobileLayout';
 import { BottomNav } from '@/components/BottomNav';
 import AvatarSVG from '@/components/AvatarSVG';
 import { AvatarEditor } from '@/components/AvatarEditor';
+import { ActivityHeatmap } from '@/components/ActivityHeatmap';
+import { ShareCard } from '@/components/ShareCard';
 import { getLevelFromXP, getDominantAttribute, LEVEL_NAMES, ATTRIBUTES, type AttributeName } from '@/lib/constants';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -69,6 +71,22 @@ export default function ProfilePage() {
     enabled: !!user,
   });
 
+  // Last 90 days for heatmap
+  const { data: heatmapActivities } = useQuery({
+    queryKey: ['heatmap-activities', user?.id],
+    queryFn: async () => {
+      const d90 = new Date();
+      d90.setDate(d90.getDate() - 84);
+      const { data } = await supabase
+        .from('activities')
+        .select('completed_at')
+        .eq('user_id', user!.id)
+        .gte('completed_at', d90.toISOString());
+      return data ?? [];
+    },
+    enabled: !!user,
+  });
+
   const { data: favorites } = useQuery({
     queryKey: ['favorite-types', user?.id],
     queryFn: async () => {
@@ -108,11 +126,26 @@ export default function ProfilePage() {
     toast.success('Meta actualizada');
   };
 
+  const fullAvatarConfig = {
+    skin_tone: avatarConfig?.skin_tone ?? 'medium',
+    hair_style: avatarConfig?.hair_style ?? 'short',
+    hair_color: avatarConfig?.hair_color ?? 'black',
+    outfit: avatarConfig?.outfit ?? 'casual',
+    facial_hair: avatarConfig?.facial_hair ?? 'none',
+    eye_color: avatarConfig?.eye_color ?? 'brown',
+    face_shape: avatarConfig?.face_shape ?? 'oval',
+    eye_shape: avatarConfig?.eye_shape ?? 'almond',
+    nose: avatarConfig?.nose ?? 'straight',
+    mouth: avatarConfig?.mouth ?? 'neutral',
+    gender: (avatarConfig as any)?.gender ?? 'neutral',
+    eyebrows: (avatarConfig as any)?.eyebrows ?? 'normal',
+  };
+
   const stats = [
     { label: 'Actividades', value: totalActivities ?? 0 },
-    { label: 'Racha actual', value: streak?.current_streak ?? 0 },
+    { label: 'Racha actual', value: `${streak?.current_streak ?? 0}🔥` },
     { label: 'Racha máx', value: streak?.max_streak ?? 0 },
-    { label: 'XP total', value: avatar.total_xp },
+    { label: 'XP total', value: (avatar.total_xp).toLocaleString() },
   ];
 
   return (
@@ -120,21 +153,34 @@ export default function ProfilePage() {
       <div className="px-5 pt-12 pb-24 space-y-6">
         <h1 className="text-xl font-bold text-foreground">Perfil</h1>
 
+        {/* Avatar + name */}
         <div className="flex flex-col items-center gap-3">
           <div className="cursor-pointer" onClick={() => setEditorOpen(true)}>
-            <div className="bg-card rounded-2xl border border-border p-2">
+            <div className="bg-card rounded-2xl border border-border p-2 hover:border-primary/50 transition-colors">
               <AvatarSVG
-                config={{ skin_tone: avatarConfig?.skin_tone ?? 'medium', hair_style: avatarConfig?.hair_style ?? 'short', hair_color: avatarConfig?.hair_color ?? 'black', outfit: avatarConfig?.outfit ?? 'casual', facial_hair: avatarConfig?.facial_hair ?? 'none', eye_color: avatarConfig?.eye_color ?? 'brown' }}
+                config={fullAvatarConfig}
                 attributes={attrs}
-                size={100}
+                size={110}
+                showAura
               />
             </div>
           </div>
           <p className="text-lg font-semibold text-foreground">{profile.username}</p>
           <p className="text-sm text-muted-foreground">Nivel {level} — {LEVEL_NAMES[level]}</p>
-          <Button variant="outline" size="sm" onClick={() => setEditorOpen(true)} className="gap-1.5 text-xs">
-            ✏️ Editar avatar
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setEditorOpen(true)} className="gap-1.5 text-xs">
+              ✏️ Editar avatar
+            </Button>
+          </div>
+          {/* Share card */}
+          <ShareCard
+            username={profile.username}
+            level={level}
+            totalXP={avatar.total_xp}
+            dominant={dominant}
+            attrs={attrs}
+            avatarConfig={fullAvatarConfig}
+          />
         </div>
 
         {/* Monthly goal */}
@@ -160,17 +206,14 @@ export default function ProfilePage() {
               )}
             </div>
             {!editingGoal && (
-              <button
-                onClick={() => { setEditingGoal(true); setGoalValue(String(profile.monthly_goal ?? 20)); }}
-                className="text-xs text-primary"
-              >
+              <button onClick={() => { setEditingGoal(true); setGoalValue(String(profile.monthly_goal ?? 20)); }} className="text-xs text-primary">
                 Editar
               </button>
             )}
           </div>
           <div className="mt-3 h-2 bg-secondary rounded-full overflow-hidden">
             <div
-              className="h-full bg-success rounded-full transition-all"
+              className="h-full bg-primary rounded-full transition-all"
               style={{ width: `${Math.min(((monthActivities?.length ?? 0) / (profile.monthly_goal ?? 20)) * 100, 100)}%` }}
             />
           </div>
@@ -186,6 +229,9 @@ export default function ProfilePage() {
           ))}
         </div>
 
+        {/* Activity Heatmap */}
+        <ActivityHeatmap activities={heatmapActivities ?? []} />
+
         {/* Favorites */}
         {favorites && favorites.length > 0 && (
           <div>
@@ -200,7 +246,6 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* This month */}
         {mostFrequent && (
           <div className="p-4 rounded-xl bg-card border border-border">
             <p className="text-sm font-semibold text-foreground">Este mes</p>
@@ -210,7 +255,6 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Sign out */}
         <button
           onClick={signOut}
           className="w-full flex items-center justify-center gap-2 h-12 rounded-lg border border-border text-muted-foreground hover:text-destructive transition-colors"
