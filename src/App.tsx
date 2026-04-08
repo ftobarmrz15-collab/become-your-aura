@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { SplashScreen } from "@/components/SplashScreen";
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
@@ -18,13 +18,17 @@ import GroupsPage from "./pages/GroupsPage";
 import GroupDetailPage from "./pages/GroupDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import PublicProfilePage from "./pages/PublicProfilePage";
+import FeedPage from "./pages/FeedPage";
+import DuelsPage from "./pages/DuelsPage";
+import UsersPage from "./pages/UsersPage";
+import AchievementsPage from "./pages/AchievementsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 function AppRoutes() {
   const { user, loading } = useAuth();
-  const [splashDone, setSplashDone] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile-check', user?.id],
@@ -35,12 +39,7 @@ function AppRoutes() {
     enabled: !!user,
   });
 
-  // Show splash on first load only
-  const [showSplash, setShowSplash] = useState(true);
-
-  if (showSplash) {
-    return <SplashScreen onDone={() => setShowSplash(false)} />;
-  }
+  if (showSplash) return <SplashScreen onDone={() => setShowSplash(false)} />;
 
   if (loading || (user && profileLoading)) {
     return (
@@ -50,21 +49,8 @@ function AppRoutes() {
     );
   }
 
-  if (!user) {
-    return (
-      <Routes>
-        <Route path="*" element={<AuthPage />} />
-      </Routes>
-    );
-  }
-
-  if (!profile || !profile.onboarded) {
-    return (
-      <Routes>
-        <Route path="*" element={<OnboardingPage />} />
-      </Routes>
-    );
-  }
+  if (!user) return <Routes><Route path="*" element={<AuthPage />} /></Routes>;
+  if (!profile || !profile.onboarded) return <Routes><Route path="*" element={<OnboardingPage />} /></Routes>;
 
   return (
     <Routes>
@@ -77,6 +63,10 @@ function AppRoutes() {
       <Route path="/groups/:groupId" element={<GroupDetailPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/profile/:userId" element={<PublicProfilePage />} />
+      <Route path="/feed" element={<FeedPage />} />
+      <Route path="/duels" element={<DuelsPage />} />
+      <Route path="/users" element={<UsersPage />} />
+      <Route path="/achievements" element={<AchievementsPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
