@@ -91,7 +91,7 @@ export default function UsersPage() {
   const { data: followingIds } = useQuery({
     queryKey: ['following-ids', user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from('follows').select('following_id').eq('follower_id', user!.id);
+      const { data } = await (supabase as any).from('follows').select('following_id').eq('follower_id', user!.id);
       return (data ?? []).map((f: any) => f.following_id);
     },
     enabled: !!user,
@@ -201,9 +201,9 @@ export default function UsersPage() {
 
       const users = await Promise.all(avatars.map(async (a: any) => {
         const [profileRes, configRes, followersRes] = await Promise.all([
-          supabase.from('users').select('username, is_public').eq('user_id', a.user_id).single(),
+          supabase.from('users').select('username').eq('user_id', a.user_id).single(),
           supabase.from('avatar_config').select('*').eq('user_id', a.user_id).single(),
-          supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', a.user_id),
+          (supabase as any).from('follows').select('id', { count: 'exact', head: true }).eq('following_id', a.user_id),
         ]);
         const totalXP = a.total_xp ?? 0;
         const attrs: Record<string, number> = {};
@@ -229,10 +229,10 @@ export default function UsersPage() {
   const followMutation = useMutation({
     mutationFn: async ({ userId, isFollowing }: { userId: string; isFollowing: boolean }) => {
       if (isFollowing) {
-        await supabase.from('follows').delete().eq('follower_id', user!.id).eq('following_id', userId);
+        await (supabase as any).from('follows').delete().eq('follower_id', user!.id).eq('following_id', userId);
         toast.success('Dejaste de seguir');
       } else {
-        await supabase.from('follows').insert({ follower_id: user!.id, following_id: userId });
+        await (supabase as any).from('follows').insert({ follower_id: user!.id, following_id: userId });
         toast.success('¡Ahora los sigues!');
       }
     },

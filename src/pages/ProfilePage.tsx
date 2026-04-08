@@ -84,7 +84,7 @@ export default function ProfilePage() {
   const { data: followersCount } = useQuery({
     queryKey: ['followers-count', user?.id],
     queryFn: async () => {
-      const { count } = await supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', user!.id);
+      const { count } = await (supabase as any).from('follows').select('id', { count: 'exact', head: true }).eq('following_id', user!.id);
       return count ?? 0;
     },
     enabled: !!user,
@@ -93,7 +93,7 @@ export default function ProfilePage() {
   const { data: duelsWon } = useQuery({
     queryKey: ['duels-won', user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from('duels').select('winner_id').or(`challenger_id.eq.${user!.id},challenged_id.eq.${user!.id}`).eq('status', 'finished');
+      const { data } = await (supabase as any).from('duels').select('winner_id').or(`challenger_id.eq.${user!.id},challenged_id.eq.${user!.id}`).eq('status', 'finished');
       return (data ?? []).filter((d: any) => d.winner_id === user!.id).length;
     },
     enabled: !!user,

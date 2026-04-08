@@ -20,7 +20,7 @@ export function BottomNav() {
   const { data: pendingCount } = useQuery({
     queryKey: ['pending-duels-count', user?.id],
     queryFn: async () => {
-      const { count } = await supabase
+      const { count } = await (supabase as any)
         .from('duels')
         .select('id', { count: 'exact', head: true })
         .eq('challenged_id', user!.id)

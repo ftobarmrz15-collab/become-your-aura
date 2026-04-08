@@ -21,7 +21,7 @@ async function enrichActivities(activities: any[], userId: string) {
       supabase.from('users').select('username').eq('user_id', a.user_id).single(),
       supabase.from('avatar_state').select('*').eq('user_id', a.user_id).single(),
       supabase.from('avatar_config').select('*').eq('user_id', a.user_id).single(),
-      supabase.from('activity_likes').select('user_id').eq('activity_id', a.id),
+      (supabase as any).from('activity_likes').select('user_id').eq('activity_id', a.id),
       supabase.from('uploads').select('*').eq('activity_id', a.id),
     ]);
     return {
@@ -50,9 +50,9 @@ function ActivityCard({ activity, currentUserId }: { activity: any; currentUserI
   const likeMutation = useMutation({
     mutationFn: async () => {
       if (liked) {
-        await supabase.from('activity_likes').delete().eq('activity_id', activity.id).eq('user_id', currentUserId);
+        await (supabase as any).from('activity_likes').delete().eq('activity_id', activity.id).eq('user_id', currentUserId);
       } else {
-        await supabase.from('activity_likes').insert({ activity_id: activity.id, user_id: currentUserId });
+        await (supabase as any).from('activity_likes').insert({ activity_id: activity.id, user_id: currentUserId });
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['feed'] }),
@@ -60,7 +60,7 @@ function ActivityCard({ activity, currentUserId }: { activity: any; currentUserI
 
   const challengeMutation = useMutation({
     mutationFn: async () => {
-      await supabase.from('duels').insert({
+      await (supabase as any).from('duels').insert({
         challenger_id: currentUserId,
         challenged_id: activity.user_id,
         discipline: activity.activity_type?.name ?? 'General',
@@ -149,7 +149,7 @@ export default function FeedPage() {
       let userIds: string[] = [];
 
       if (tab === 'following') {
-        const { data: follows } = await supabase.from('follows').select('following_id').eq('follower_id', user!.id);
+        const { data: follows } = await (supabase as any).from('follows').select('following_id').eq('follower_id', user!.id);
         userIds = (follows ?? []).map((f: any) => f.following_id);
         userIds.push(user!.id);
         if (userIds.length <= 1) return [];
