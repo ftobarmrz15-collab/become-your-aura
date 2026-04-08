@@ -45,7 +45,7 @@ export default function DuelsPage() {
   const { data: duels, isLoading } = useQuery({
     queryKey: ['duels', user?.id],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('duels').select('*')
         .or(`challenger_id.eq.${user!.id},challenged_id.eq.${user!.id}`)
         .order('created_at', { ascending: false });
@@ -92,10 +92,10 @@ export default function DuelsPage() {
         const duel = duels?.find((d: any) => d.id === duelId);
         if (duel?.duration === 'month') endsAt.setMonth(endsAt.getMonth() + 1);
         else endsAt.setDate(endsAt.getDate() + 7);
-        await supabase.from('duels').update({ status: 'active', ends_at: endsAt.toISOString() }).eq('id', duelId);
+        await (supabase as any).from('duels').update({ status: 'active', ends_at: endsAt.toISOString() }).eq('id', duelId);
         toast.success('¡Duelo aceptado! ⚔️');
       } else {
-        await supabase.from('duels').update({ status: 'declined' }).eq('id', duelId);
+        await (supabase as any).from('duels').update({ status: 'declined' }).eq('id', duelId);
         toast.info('Duelo rechazado');
       }
     },
@@ -105,7 +105,7 @@ export default function DuelsPage() {
   const createDuelMutation = useMutation({
     mutationFn: async () => {
       if (!selectedUserId) throw new Error('Selecciona un usuario');
-      await supabase.from('duels').insert({
+      await (supabase as any).from('duels').insert({
         challenger_id: user!.id, challenged_id: selectedUserId,
         discipline, duration, status: 'pending',
       });

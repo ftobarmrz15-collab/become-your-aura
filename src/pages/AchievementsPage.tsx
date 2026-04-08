@@ -19,8 +19,8 @@ export default function AchievementsPage() {
         supabase.from('avatar_state').select('*').eq('user_id', user!.id).single(),
         supabase.from('streaks').select('*').eq('user_id', user!.id).single(),
         supabase.from('activities').select('id', { count: 'exact', head: true }).eq('user_id', user!.id),
-        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', user!.id),
-        supabase.from('duels').select('winner_id').or(`challenger_id.eq.${user!.id},challenged_id.eq.${user!.id}`).eq('status', 'finished'),
+        (supabase as any).from('follows').select('id', { count: 'exact', head: true }).eq('following_id', user!.id),
+        (supabase as any).from('duels').select('winner_id').or(`challenger_id.eq.${user!.id},challenged_id.eq.${user!.id}`).eq('status', 'finished'),
       ]);
       const av = avatarRes.data;
       const duelsWon = (duelsRes.data ?? []).filter((d: any) => d.winner_id === user!.id).length;
