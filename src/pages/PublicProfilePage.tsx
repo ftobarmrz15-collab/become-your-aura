@@ -73,9 +73,9 @@ export default function PublicProfilePage() {
     queryKey: ['follow-status', user?.id, userId],
     queryFn: async () => {
       const [followersRes, followingRes, isFollowingRes] = await Promise.all([
-        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', userId!),
-        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', userId!),
-        user ? supabase.from('follows').select('id').eq('follower_id', user.id).eq('following_id', userId!).maybeSingle() : Promise.resolve({ data: null }),
+        (supabase as any).from('follows').select('id', { count: 'exact', head: true }).eq('following_id', userId!),
+        (supabase as any).from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', userId!),
+        user ? (supabase as any).from('follows').select('id').eq('follower_id', user.id).eq('following_id', userId!).maybeSingle() : Promise.resolve({ data: null }),
       ]);
       return {
         followers: followersRes.count ?? 0,
@@ -91,7 +91,7 @@ export default function PublicProfilePage() {
     queryFn: async () => {
       const actIds = (activities ?? []).map((a: any) => a.id);
       if (actIds.length === 0) return {};
-      const { data } = await supabase.from('activity_likes').select('activity_id, user_id').in('activity_id', actIds);
+      const { data } = await (supabase as any).from('activity_likes').select('activity_id, user_id').in('activity_id', actIds);
       const map: Record<string, string[]> = {};
       data?.forEach((l: any) => {
         if (!map[l.activity_id]) map[l.activity_id] = [];
@@ -106,10 +106,10 @@ export default function PublicProfilePage() {
     mutationFn: async () => {
       if (!user) return;
       if (followData?.isFollowing) {
-        await supabase.from('follows').delete().eq('follower_id', user.id).eq('following_id', userId!);
+        await (supabase as any).from('follows').delete().eq('follower_id', user.id).eq('following_id', userId!);
         toast.success('Dejaste de seguir');
       } else {
-        await supabase.from('follows').insert({ follower_id: user.id, following_id: userId! });
+        await (supabase as any).from('follows').insert({ follower_id: user.id, following_id: userId! });
         toast.success('¡Siguiendo a ' + (profile?.username ?? 'este usuario') + '!');
       }
     },
@@ -121,9 +121,9 @@ export default function PublicProfilePage() {
       if (!user) return;
       const liked = (likesData?.[activityId] ?? []).includes(user.id);
       if (liked) {
-        await supabase.from('activity_likes').delete().eq('activity_id', activityId).eq('user_id', user.id);
+        await (supabase as any).from('activity_likes').delete().eq('activity_id', activityId).eq('user_id', user.id);
       } else {
-        await supabase.from('activity_likes').insert({ activity_id: activityId, user_id: user.id });
+        await (supabase as any).from('activity_likes').insert({ activity_id: activityId, user_id: user.id });
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['activity-likes', userId] }),
@@ -132,7 +132,7 @@ export default function PublicProfilePage() {
   const challengeMutation = useMutation({
     mutationFn: async () => {
       if (!user || !userId) return;
-      await supabase.from('duels').insert({
+      await (supabase as any).from('duels').insert({
         challenger_id: user.id, challenged_id: userId,
         discipline: 'General', duration: 'week', status: 'pending',
       });
