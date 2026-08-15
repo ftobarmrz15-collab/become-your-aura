@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { SplashScreen } from "@/components/SplashScreen";
 import AuthPage from "./pages/AuthPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import HomePage from "./pages/HomePage";
 import ActivitiesPage from "./pages/ActivitiesPage";
@@ -46,6 +47,15 @@ function AppRoutes() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-foreground text-lg font-bold tracking-tight animate-pulse">AURA</div>
       </div>
+    );
+  }
+
+  const isRecovery = window.location.hash.includes('type=recovery') || window.location.pathname === '/reset-password';
+  if (isRecovery) {
+    return (
+      <Routes>
+        <Route path="*" element={<ResetPasswordPage />} />
+      </Routes>
     );
   }
 
